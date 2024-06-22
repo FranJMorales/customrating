@@ -1,0 +1,46 @@
+<?php
+	set_time_limit(0);
+	include('./wp-config.php');
+
+	$Posts = $wpdb->get_results("SELECT * FROM $wpdb->posts WHERE post_type = 'post' && post_status = 'publish'");
+	foreach ($Posts as $post){
+               muchos($post->ID,$post->post_title);
+	}
+
+	function muchos($id,$txt){
+		$total = mt_rand(10,200);	//Cantidad de votos
+		$_stars = mt_rand(4,5);		//Cantidad de estrellas. del 1 al 5
+
+		kksr_all_post($id,$_stars,$total);
+		echo "[".$txt."] Total: +".$total."<br/>";
+	}
+
+        function kksr_all_post($pid,$stars,$cantu)
+        {
+            $total_stars = 5;
+
+            $ratings = get_post_meta($pid, '_kksr_ratings', true) ? get_post_meta($pid, '_kksr_ratings', true) : 0;
+            $casts = get_post_meta($pid, '_kksr_casts', true) ? get_post_meta($pid, '_kksr_casts', true) : 0;
+
+            $nratings = $ratings + ($cantu * $stars);
+            $ncasts = $casts + $cantu;
+            $avg = $nratings && $ncasts ? number_format((float)($nratings/$ncasts), 2, '.', '') : 0;
+            $per = $nratings && $ncasts ? number_format((float)((($nratings/$ncasts)/5)*100), 2, '.', '') : 0;
+
+            if($stars)
+            {
+		$ip = "127.0.0.".mt_rand(0,100);
+                $Ips = get_post_meta($pid, '_kksr_ips', true) ? unserialize(base64_decode(get_post_meta($pid, '_kksr_ips', true))) : array();
+                if(!in_array($ip, $Ips))
+                {
+                    $Ips[] = $ip;
+                }
+                $ips = base64_encode(serialize($Ips));
+                update_post_meta($pid, '_kksr_ratings', $nratings);
+                update_post_meta($pid, '_kksr_casts', $ncasts);
+                update_post_meta($pid, '_kksr_ips', $ips);
+                update_post_meta($pid, '_kksr_avg', $avg);
+
+                do_action('kksr_rate', $pid, $stars, $ip);
+            }
+        }
